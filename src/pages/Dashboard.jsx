@@ -18,12 +18,57 @@ function App() {
 
   // Apply theme to body globally for the scalable theming system
   useEffect(() => {
+    if (!theme) return;
+
     if (theme.mode === 'light') {
       document.body.classList.add('theme-light');
     } else {
       document.body.classList.remove('theme-light');
     }
-  }, [theme.mode]);
+
+    // Apply custom colors if they exist (overrides defaults set by theme-light or root)
+    if (theme.background_color) {
+      document.documentElement.style.setProperty('--color-app-bg', theme.background_color);
+    } else {
+      document.documentElement.style.removeProperty('--color-app-bg');
+    }
+
+    if (theme.button_color) {
+      document.documentElement.style.setProperty('--color-app-surface', theme.button_color);
+      document.documentElement.style.setProperty('--color-app-surface-hover', theme.button_color);
+    } else {
+      document.documentElement.style.removeProperty('--color-app-surface');
+      document.documentElement.style.removeProperty('--color-app-surface-hover');
+    }
+
+    if (theme.button_text_color) {
+      document.documentElement.style.setProperty('--color-app-text', theme.button_text_color);
+    } else {
+      document.documentElement.style.removeProperty('--color-app-text');
+    }
+
+    // Apply font family
+    if (theme.font_family) {
+      if (theme.font_family === 'serif') {
+        document.body.classList.add('font-serif');
+        document.body.classList.remove('font-sans', 'font-mono');
+      } else if (theme.font_family === 'mono') {
+        document.body.classList.add('font-mono');
+        document.body.classList.remove('font-sans', 'font-serif');
+      } else {
+        document.body.classList.add('font-sans');
+        document.body.classList.remove('font-serif', 'font-mono');
+      }
+    }
+
+    return () => {
+      document.documentElement.style.removeProperty('--color-app-bg');
+      document.documentElement.style.removeProperty('--color-app-surface');
+      document.documentElement.style.removeProperty('--color-app-surface-hover');
+      document.documentElement.style.removeProperty('--color-app-text');
+      document.body.classList.remove('font-serif', 'font-mono');
+    };
+  }, [theme]);
 
   const renderContent = () => {
     return (

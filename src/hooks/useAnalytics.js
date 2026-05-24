@@ -23,6 +23,8 @@ export const useAnalytics = () => {
 
   const trackLinkClick = useCallback((linkId, url) => {
     trackEvent('Link Clicked', { linkId, url });
+    // In a real app we would pass the target user's ID to increment the specific click count via RPC
+    // analyticsService.recordClick(targetUserId, linkId).catch(() => {});
   }, [trackEvent]);
 
   return { trackEvent, trackPageView, trackLinkClick };

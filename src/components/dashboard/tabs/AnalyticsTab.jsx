@@ -1,4 +1,15 @@
 import { FaMousePointer, FaEye, FaArrowUp, FaGlobe, FaMobileAlt, FaDesktop } from 'react-icons/fa';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
+const data = [
+  { name: 'Mon', views: 400, clicks: 240 },
+  { name: 'Tue', views: 300, clicks: 139 },
+  { name: 'Wed', views: 200, clicks: 980 },
+  { name: 'Thu', views: 278, clicks: 390 },
+  { name: 'Fri', views: 189, clicks: 480 },
+  { name: 'Sat', views: 239, clicks: 380 },
+  { name: 'Sun', views: 349, clicks: 430 },
+];
 
 const AnalyticsTab = () => {
   return (
@@ -42,29 +53,36 @@ const AnalyticsTab = () => {
         </div>
       </div>
 
-      {/* Mock Chart Area */}
+      {/* Real Chart Area */}
       <div className="glass-panel p-6 rounded-3xl flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-semibold text-[var(--color-app-text)]">Traffic Trend</span>
           <span className="text-xs font-medium text-[var(--color-app-text-muted)]">Click-through Rate: 66.4%</span>
         </div>
 
-        {/* CSS-based Mock Bar Chart */}
-        <div className="h-32 flex items-end justify-between gap-2 border-b border-[var(--color-app-border)] pb-2">
-          {[40, 65, 45, 80, 55, 90, 75].map((height, i) => (
-            <div key={i} className="w-full flex justify-center group relative">
-              <div
-                className="w-full max-w-[32px] bg-[var(--color-app-surface-hover)] rounded-t-md transition-all duration-500 group-hover:bg-[var(--color-app-text)]"
-                style={{ height: `${height}%` }}
-              ></div>
-              <div className="absolute -top-8 bg-[var(--color-app-text)] text-[var(--color-app-bg)] text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                {height * 10}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between text-[10px] text-[var(--color-app-text-muted)] font-medium uppercase px-2">
-          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        <div className="h-[250px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#82ca9d" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" stroke="var(--color-app-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--color-app-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: 'var(--color-app-surface)', borderColor: 'var(--color-app-border)', borderRadius: '12px' }}
+                itemStyle={{ color: 'var(--color-app-text)' }}
+              />
+              <Area type="monotone" dataKey="views" stroke="#8884d8" fillOpacity={1} fill="url(#colorViews)" />
+              <Area type="monotone" dataKey="clicks" stroke="#82ca9d" fillOpacity={1} fill="url(#colorClicks)" />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
