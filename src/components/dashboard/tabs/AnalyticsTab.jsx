@@ -1,17 +1,55 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { analyticsService } from '../../../services/analyticsService';
 import { FaMousePointer, FaEye, FaArrowUp, FaGlobe, FaMobileAlt, FaDesktop } from 'react-icons/fa';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-const data = [
-  { name: 'Mon', views: 400, clicks: 240 },
-  { name: 'Tue', views: 300, clicks: 139 },
-  { name: 'Wed', views: 200, clicks: 980 },
-  { name: 'Thu', views: 278, clicks: 390 },
-  { name: 'Fri', views: 189, clicks: 480 },
-  { name: 'Sat', views: 239, clicks: 380 },
-  { name: 'Sun', views: 349, clicks: 430 },
+// Fallback data if DB fetch fails or is empty
+const fallbackData = [
+  { name: 'Mon', views: 40, clicks: 24 },
+  { name: 'Tue', views: 30, clicks: 13 },
+  { name: 'Wed', views: 20, clicks: 98 },
+  { name: 'Thu', views: 27, clicks: 39 },
+  { name: 'Fri', views: 18, clicks: 48 },
+  { name: 'Sat', views: 23, clicks: 38 },
+  { name: 'Sun', views: 34, clicks: 43 },
 ];
 
 const AnalyticsTab = () => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({ total_views: 0, total_clicks: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let isMounted = true;
+    const fetchAnalytics = async () => {
+      try {
+        const data = await analyticsService.getAnalytics(user.id);
+        if (data && isMounted) {
+           setStats(data);
+        }
+      } catch (err) {
+        if (isMounted) console.error("Failed to load analytics", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  if (loading) {
+     return <div className="p-8 flex justify-center text-[var(--color-app-text-muted)] animate-pulse">Loading analytics...</div>;
+  }
+
+  const ctr = stats.total_views > 0 ? ((stats.total_clicks / stats.total_views) * 100).toFixed(1) : 0;
+
   return (
     <div className="flex flex-col gap-6 w-full animate-fade-in pb-32 lg:pb-8">
 
@@ -32,7 +70,7 @@ const AnalyticsTab = () => {
             <span className="text-sm font-medium">Profile Views</span>
           </div>
           <div className="flex items-end gap-3">
-            <span className="text-3xl font-bold text-[var(--color-app-text)] tracking-tight">12.4K</span>
+            <span className="text-3xl font-bold text-[var(--color-app-text)] tracking-tight">{stats.total_views.toLocaleString()}</span>
             <span className="flex items-center text-xs font-medium text-emerald-500 mb-1">
               <FaArrowUp size={10} className="mr-0.5" /> 14%
             </span>
@@ -45,7 +83,7 @@ const AnalyticsTab = () => {
             <span className="text-sm font-medium">Total Clicks</span>
           </div>
           <div className="flex items-end gap-3">
-            <span className="text-3xl font-bold text-[var(--color-app-text)] tracking-tight">8,241</span>
+            <span className="text-3xl font-bold text-[var(--color-app-text)] tracking-tight">{stats.total_clicks.toLocaleString()}</span>
             <span className="flex items-center text-xs font-medium text-emerald-500 mb-1">
               <FaArrowUp size={10} className="mr-0.5" /> 8%
             </span>
@@ -57,12 +95,12 @@ const AnalyticsTab = () => {
       <div className="glass-panel p-6 rounded-3xl flex flex-col gap-6">
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-semibold text-[var(--color-app-text)]">Traffic Trend</span>
-          <span className="text-xs font-medium text-[var(--color-app-text-muted)]">Click-through Rate: 66.4%</span>
+          <span className="text-xs font-medium text-[var(--color-app-text-muted)]">Click-through Rate: {ctr}%</span>
         </div>
 
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={fallbackData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8884d8" stopOpacity={0.3}/>

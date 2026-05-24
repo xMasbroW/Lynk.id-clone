@@ -22,5 +22,12 @@ export const themeService = {
 
     if (error) throw error;
     return data;
+  },
+
+  subscribeToTheme(userId, callback) {
+    return supabase
+      .channel(`public:themes:user_id=eq.${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'themes', filter: `user_id=eq.${userId}` }, callback)
+      .subscribe();
   }
 };

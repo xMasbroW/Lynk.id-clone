@@ -55,6 +55,31 @@ export const AppProvider = ({ children }) => {
     };
 
     loadData();
+
+    // Supabase Realtime Subscriptions
+    const profileSub = profileService.subscribeToProfile(user.id, (payload) => {
+      setProfileState(prev => ({ ...prev, ...payload.new }));
+    });
+
+    const themeSub = themeService.subscribeToTheme(user.id, (payload) => {
+      setThemeState(prev => ({ ...prev, ...payload.new }));
+    });
+
+    const linksSub = linkService.subscribeToLinks(user.id, (payload) => {
+      if (payload.eventType === 'INSERT') {
+        setLinksState(prev => [...prev.filter(l => l.id !== payload.new.id), payload.new].sort((a, b) => a.order_index - b.order_index));
+      } else if (payload.eventType === 'UPDATE') {
+        setLinksState(prev => prev.map(l => l.id === payload.new.id ? { ...l, ...payload.new } : l).sort((a, b) => a.order_index - b.order_index));
+      } else if (payload.eventType === 'DELETE') {
+        setLinksState(prev => prev.filter(l => l.id !== payload.old.id));
+      }
+    });
+
+    return () => {
+      if (profileSub) profileSub.unsubscribe();
+      if (themeSub) themeSub.unsubscribe();
+      if (linksSub) linksSub.unsubscribe();
+    };
   }, [user]);
 
   // Debounced server syncs

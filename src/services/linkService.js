@@ -63,5 +63,12 @@ export const linkService = {
 
     if (error) throw error;
     return data;
+  },
+
+  subscribeToLinks(userId, callback) {
+    return supabase
+      .channel(`public:links:user_id=eq.${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'links', filter: `user_id=eq.${userId}` }, callback)
+      .subscribe();
   }
 };

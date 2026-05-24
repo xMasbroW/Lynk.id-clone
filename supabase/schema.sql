@@ -53,9 +53,21 @@ CREATE TABLE analytics (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 5. Subscriptions (Billing Prep) Table
+CREATE TABLE subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    plan_type TEXT DEFAULT 'free',
+    status TEXT DEFAULT 'active',
+    ends_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Set up Row Level Security (RLS)
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE themes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
@@ -103,10 +115,37 @@ CREATE POLICY "Users can delete own links."
     ON links FOR DELETE
     USING (auth.uid() = user_id);
 
+-- Policies for subscriptions
+CREATE POLICY "Users can view their own subscriptions."
+    ON subscriptions FOR SELECT
+    USING (auth.uid() = user_id);
+
 -- Policies for analytics
 CREATE POLICY "Users can view their own analytics."
     ON analytics FOR SELECT
     USING (auth.uid() = user_id);
+
+-- RPC for incrementing views
+CREATE OR REPLACE FUNCTION increment_view(target_user_id UUID, device_type TEXT DEFAULT 'desktop', referrer_url TEXT DEFAULT 'direct')
+RETURNS void AS $$
+BEGIN
+  UPDATE public.analytics
+  SET total_views = total_views + 1,
+      updated_at = timezone('utc'::text, now())
+  WHERE user_id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC for incrementing clicks
+CREATE OR REPLACE FUNCTION increment_click(target_user_id UUID, target_link_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.analytics
+  SET total_clicks = total_clicks + 1,
+      updated_at = timezone('utc'::text, now())
+  WHERE user_id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to handle new user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()

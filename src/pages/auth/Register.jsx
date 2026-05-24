@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function Register() {
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,10 +19,10 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      await register(email, password, name);
+      await register(email, password, name, username);
       navigate('/dashboard');
-    } catch {
-      setError('Failed to create account. Email might be in use.');
+    } catch (err) {
+      setError(err.message || 'Failed to create account. Email or username might be in use.');
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +72,24 @@ export default function Register() {
                 className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-app-text)] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
                 placeholder="Jane Doe"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5" htmlFor="username">Username</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <span className="text-[var(--color-text-secondary)]">lynk.id/</span>
+                </div>
+                <input
+                  id="username"
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-app-text)] rounded-xl pl-16 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
+                  placeholder="username"
+                />
+              </div>
             </div>
 
             <div>
