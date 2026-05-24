@@ -6,10 +6,7 @@ const SettingsTab = () => {
   const { theme, setTheme } = useAppContext();
 
   const toggleTheme = () => {
-    setTheme(prev => ({
-      ...prev,
-      mode: prev.mode === 'dark' ? 'light' : 'dark'
-    }));
+    setTheme({ mode: theme.mode === 'dark' ? 'light' : 'dark' });
   };
 
   return (

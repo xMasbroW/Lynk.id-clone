@@ -31,7 +31,7 @@ const LinkEditor = () => {
 
       <div className="flex flex-col gap-3">
         {links.map((link, index) => (
-          <div key={link.id} className={`glass-panel p-4 rounded-2xl flex items-center gap-3 relative group transition-opacity ${!link.isActive ? 'opacity-60' : 'opacity-100'}`}>
+          <div key={link.id} className={`glass-panel p-4 rounded-2xl flex items-center gap-3 relative group transition-opacity ${!link.is_active ? 'opacity-60' : 'opacity-100'}`}>
 
             {/* Reorder Handle (Simplified for tactical feel) */}
             <div className="flex flex-col items-center justify-center gap-1 text-[var(--color-app-text-muted)] w-8 cursor-grab active:cursor-grabbing hover:text-[var(--color-app-text)] transition-colors">
@@ -70,8 +70,8 @@ const LinkEditor = () => {
                 </label>
                 <input
                   type="text"
-                  value={link.iconKey}
-                  onChange={(e) => updateLink(link.id, { iconKey: e.target.value })}
+                  value={link.icon_key || ''}
+                  onChange={(e) => updateLink(link.id, { icon_key: e.target.value })}
                   placeholder="Icon (e.g. FaYoutube)"
                   className="w-24 bg-[var(--color-app-surface-hover)] border border-transparent rounded px-2 py-0.5 text-[11px] text-[var(--color-app-text)] focus:outline-none focus:border-[var(--color-app-text-muted)] transition-colors"
                 />
@@ -81,11 +81,11 @@ const LinkEditor = () => {
             {/* Actions (Absolute top right on mobile, static on desktop) */}
             <div className="absolute top-3 right-3 sm:static sm:h-full flex flex-col sm:flex-row items-center gap-2">
               <button
-                onClick={() => updateLink(link.id, { isActive: !link.isActive })}
+                onClick={() => updateLink(link.id, { is_active: !link.is_active })}
                 className="p-2 text-[var(--color-app-text-muted)] hover:text-[var(--color-app-text)] transition-colors"
-                title={link.isActive ? "Hide Link" : "Show Link"}
+                title={link.is_active ? "Hide Link" : "Show Link"}
               >
-                {link.isActive ? <FaEye size={14} /> : <FaEyeSlash size={14} />}
+                {link.is_active ? <FaEye size={14} /> : <FaEyeSlash size={14} />}
               </button>
               <button
                 onClick={() => deleteLink(link.id)}

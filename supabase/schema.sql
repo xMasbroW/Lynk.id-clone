@@ -1,0 +1,136 @@
+-- Database Architecture for Link-in-bio SaaS
+
+-- Note: In Supabase, the 'users' table is managed by auth.users.
+-- We create a 'profiles' table that links to auth.users.
+
+-- 1. Profiles Table
+CREATE TABLE profiles (
+    id UUID REFERENCES auth.users(id) PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    full_name TEXT,
+    bio TEXT,
+    avatar_url TEXT,
+    verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 2. Themes Table
+CREATE TABLE themes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    mode TEXT DEFAULT 'dark', -- 'light' or 'dark'
+    background_color TEXT,
+    button_color TEXT,
+    button_text_color TEXT,
+    font_family TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 3. Links Table
+CREATE TABLE links (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    url TEXT NOT NULL,
+    icon_key TEXT,
+    featured BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 4. Analytics (Aggregated views) Table
+CREATE TABLE analytics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    total_views INTEGER DEFAULT 0,
+    total_clicks INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Set up Row Level Security (RLS)
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE themes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
+
+-- Policies for profiles
+CREATE POLICY "Public profiles are viewable by everyone."
+    ON profiles FOR SELECT
+    USING (true);
+
+CREATE POLICY "Users can insert their own profile."
+    ON profiles FOR INSERT
+    WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile."
+    ON profiles FOR UPDATE
+    USING (auth.uid() = id);
+
+-- Policies for themes
+CREATE POLICY "Themes are viewable by everyone."
+    ON themes FOR SELECT
+    USING (true);
+
+CREATE POLICY "Users can insert their own theme."
+    ON themes FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own theme."
+    ON themes FOR UPDATE
+    USING (auth.uid() = user_id);
+
+-- Policies for links
+CREATE POLICY "Links are viewable by everyone."
+    ON links FOR SELECT
+    USING (true);
+
+CREATE POLICY "Users can insert their own links."
+    ON links FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own links."
+    ON links FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own links."
+    ON links FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- Policies for analytics
+CREATE POLICY "Users can view their own analytics."
+    ON analytics FOR SELECT
+    USING (auth.uid() = user_id);
+
+-- Function to handle new user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username, full_name, avatar_url)
+  VALUES (
+    new.id,
+    COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    COALESCE(new.raw_user_meta_data->>'full_name', ''),
+    COALESCE(new.raw_user_meta_data->>'avatar_url', '')
+  );
+
+  -- Create default theme for user
+  INSERT INTO public.themes (user_id) VALUES (new.id);
+
+  -- Create initial analytics record
+  INSERT INTO public.analytics (user_id) VALUES (new.id);
+
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger for new user signup
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

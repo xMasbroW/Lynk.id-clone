@@ -5,10 +5,7 @@ const ProfileEditor = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setProfile(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setProfile({ [name]: type === 'checkbox' ? checked : value });
   };
 
   return (
@@ -19,8 +16,8 @@ const ProfileEditor = () => {
         <label className="text-sm font-medium text-[var(--color-app-text-muted)]">Avatar URL</label>
         <input
           type="text"
-          name="avatarUrl"
-          value={profile.avatarUrl}
+          name="avatar_url"
+          value={profile.avatar_url || ''}
           onChange={handleChange}
           className="bg-[var(--color-app-surface)] border border-[var(--color-app-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-app-text)] focus:outline-none focus:border-[var(--color-app-text)] transition-colors"
           placeholder="https://..."
@@ -31,8 +28,8 @@ const ProfileEditor = () => {
         <label className="text-sm font-medium text-[var(--color-app-text-muted)]">Display Name</label>
         <input
           type="text"
-          name="name"
-          value={profile.name}
+          name="full_name"
+          value={profile.full_name || ''}
           onChange={handleChange}
           className="bg-[var(--color-app-surface)] border border-[var(--color-app-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-app-text)] focus:outline-none focus:border-[var(--color-app-text)] transition-colors"
         />

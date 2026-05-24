@@ -23,23 +23,23 @@ const PhonePreview = () => {
 
           <div className="w-full flex flex-col pt-12 px-5 z-10 animate-fade-in">
             <ProfileCard
-              name={profile.name}
+              name={profile.full_name}
               bio={profile.bio}
-              avatarUrl={profile.avatarUrl}
+              avatarUrl={profile.avatar_url}
               verified={profile.verified}
             />
 
             <div className="w-full flex flex-col gap-3 mt-8">
-              {links.filter(link => link.isActive).map((link) => (
+              {links.filter(link => link.is_active).map((link) => (
                 <LinkButton
                   key={link.id}
                   id={link.id}
                   title={link.title}
                   subtitle={link.subtitle}
                   url={link.url}
-                  iconKey={link.iconKey}
+                  iconKey={link.icon_key}
                   featured={link.featured}
-                  isActive={link.isActive}
+                  isActive={link.is_active}
                 />
               ))}
             </div>

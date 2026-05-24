@@ -1,6 +1,9 @@
-import { FaLink, FaChartBar, FaCog } from 'react-icons/fa';
+import { FaLink, FaChartBar, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
+  const { logout } = useAuth();
+
   const tabs = [
     { id: 'links', label: 'Links', icon: FaLink },
     { id: 'analytics', label: 'Analytics', icon: FaChartBar },
@@ -36,6 +39,17 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
           );
         })}
       </nav>
+
+      {/* Logout Button (Desktop) */}
+      <div className="hidden lg:block mt-auto p-4">
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-start gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all outline-none text-[var(--color-app-text-muted)] hover:bg-[var(--color-app-surface-hover)] hover:text-red-400 border border-transparent"
+        >
+          <FaSignOutAlt size={14} className="opacity-70" />
+          <span className="opacity-90">Logout</span>
+        </button>
+      </div>
     </aside>
   );
 };

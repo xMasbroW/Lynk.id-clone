@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -6,13 +7,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock checking session on mount
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const storedSession = localStorage.getItem('saas_auth_session');
-        if (storedSession) {
-          setUser(JSON.parse(storedSession));
+        const session = await authService.getSession();
+        if (session?.user) {
+          setUser(session.user);
         }
       } catch (error) {
         console.error('Session error:', error);
@@ -21,29 +21,34 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // Simulate slight network delay for premium feel
-    setTimeout(checkSession, 800);
+    checkSession();
+
+    const { data: { subscription } } = authService.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  const login = async (email) => {
-    // Mock login
-    const mockUser = { id: '1', email, name: 'Alex Doe' };
-    localStorage.setItem('saas_auth_session', JSON.stringify(mockUser));
-    setUser(mockUser);
-    return { error: null };
+  const login = async (email, password) => {
+    const data = await authService.login(email, password);
+    setUser(data.user);
+    return data;
   };
 
   const logout = async () => {
-    localStorage.removeItem('saas_auth_session');
+    await authService.logout();
     setUser(null);
   };
 
   const register = async (email, password, name) => {
-    // Mock register
-    const mockUser = { id: '1', email, name };
-    localStorage.setItem('saas_auth_session', JSON.stringify(mockUser));
-    setUser(mockUser);
-    return { error: null };
+    const data = await authService.register(email, password, name);
+    // Note: If email confirmation is required, user might still be null here
+    setUser(data.user);
+    return data;
   };
 
   return (
