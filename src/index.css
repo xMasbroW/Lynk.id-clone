@@ -3,9 +3,10 @@
 @theme {
   --color-primary: #8b5cf6;
   --color-primary-dark: #7c3aed;
-  --color-background: #0f172a;
-  --color-surface: rgba(30, 41, 59, 0.7);
-  --color-surface-hover: rgba(30, 41, 59, 0.9);
+  --color-background: #09090b; /* zinc-950 for deeper black */
+  --color-surface: rgba(24, 24, 27, 0.4);
+  --color-surface-hover: rgba(39, 39, 42, 0.6);
+  --color-border: rgba(255, 255, 255, 0.08);
 }
 
 body {
@@ -14,6 +15,93 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--color-background);
-  color: #f8fafc;
+  color: #fafafa;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes eq-bounce {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+
+@keyframes shine {
+  from {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  to {
+    transform: translateX(200%) rotate(45deg);
+  }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up-delay-1 {
+  animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  opacity: 0;
+}
+
+.animate-slide-up-delay-2 {
+  animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-slide-up-delay-3 {
+  animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  opacity: 0;
+}
+
+.glass-panel {
+  background: var(--color-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.glass-panel-hover:hover {
+  background: var(--color-surface-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px) scale(1.01);
 }

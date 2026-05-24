@@ -9,7 +9,7 @@ const SocialIcons = () => {
   ];
 
   return (
-    <div className="flex items-center justify-center gap-6 py-8">
+    <div className="flex items-center justify-center gap-5 sm:gap-8 pb-10 pt-2">
       {socials.map((social) => {
         const Icon = social.icon;
         return (
@@ -18,9 +18,10 @@ const SocialIcons = () => {
             href={social.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-slate-400 hover:text-white transform hover:scale-110 transition-all duration-300"
+            className="group relative flex items-center justify-center w-12 h-12 rounded-2xl glass-panel glass-panel-hover text-zinc-400 hover:text-zinc-50"
           >
-            <Icon size={24} />
+            <Icon size={20} className="relative z-10 transform group-hover:scale-110 transition-transform duration-300" />
+            <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 rounded-2xl transition-colors duration-300"></div>
           </a>
         );
       })}
