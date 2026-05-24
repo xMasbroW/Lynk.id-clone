@@ -48,20 +48,24 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-indigo-500/30 pb-28 relative overflow-x-hidden font-sans">
-      {/* Premium Ambient Background Layers */}
+    <div className="min-h-screen bg-black text-zinc-100 selection:bg-white/20 pb-36 relative overflow-x-hidden font-sans">
+      {/* High-End Dynamic Ambient Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-600/10 blur-[120px] mix-blend-screen animate-pulse duration-10000"></div>
-        <div className="absolute top-[30%] right-[-15%] w-[40vw] h-[40vw] rounded-full bg-fuchsia-600/10 blur-[100px] mix-blend-screen"></div>
-        <div className="absolute bottom-[-10%] left-[20%] w-[60vw] h-[40vw] rounded-full bg-blue-600/10 blur-[130px] mix-blend-screen"></div>
+        {/* Soft atmospheric lighting meshes */}
+        <div className="absolute top-[-15%] left-[-20%] w-[70vw] h-[70vw] rounded-full bg-[radial-gradient(circle,rgba(63,63,70,0.15)_0%,rgba(0,0,0,0)_70%)] blur-[80px] opacity-70"></div>
+        <div className="absolute top-[20%] right-[-30%] w-[80vw] h-[80vw] rounded-full bg-[radial-gradient(circle,rgba(39,39,42,0.1)_0%,rgba(0,0,0,0)_60%)] blur-[100px] animate-[float_15s_ease-in-out_infinite]"></div>
+        <div className="absolute bottom-[-20%] left-[10%] w-[90vw] h-[50vw] rounded-full bg-[radial-gradient(circle,rgba(24,24,27,0.4)_0%,rgba(0,0,0,0)_70%)] blur-[120px]"></div>
 
-        {/* Subtle noise texture overlay */}
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        {/* Subtle cinematic tint */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-80 mix-blend-overlay"></div>
+
+        {/* Fine noise texture overlay for realism */}
+        <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
       </div>
 
-      {/* Main container */}
-      <main className="max-w-xl mx-auto px-5 sm:px-6 w-full relative z-10 flex flex-col pt-12">
-        <div className="animate-slide-up">
+      {/* Main container - Asymmetric, airy layout */}
+      <main className="max-w-2xl mx-auto px-5 sm:px-8 w-full relative z-10 flex flex-col pt-16 sm:pt-20">
+        <div className="cinematic-enter">
           <ProfileCard
             name={profileInfo.name}
             bio={profileInfo.bio}
@@ -70,25 +74,27 @@ function App() {
           />
         </div>
 
-        <div className="w-full flex flex-col gap-4 mt-8 animate-slide-up-delay-1">
-          {links.map((link) => (
-            <LinkButton
-              key={link.id}
-              title={link.title}
-              subtitle={link.subtitle}
-              url={link.url}
-              icon={link.icon}
-              featured={link.featured}
-            />
+        <div className="w-full flex flex-col gap-3.5 mt-10 cinematic-enter delay-200">
+          {links.map((link, index) => (
+            <div key={link.id} className={`cinematic-enter delay-${Math.min((index + 3) * 100, 500)}`}>
+              <LinkButton
+                title={link.title}
+                subtitle={link.subtitle}
+                url={link.url}
+                icon={link.icon}
+                featured={link.featured}
+              />
+            </div>
           ))}
         </div>
 
-        <div className="mt-10 animate-slide-up-delay-2">
+        <div className="mt-14 cinematic-enter delay-500 flex justify-center pb-8">
           <SocialIcons />
         </div>
       </main>
 
-      <div className="animate-slide-up-delay-3">
+      {/* Floating dock CTA area */}
+      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none cinematic-enter delay-500">
         <BottomCTA />
       </div>
     </div>

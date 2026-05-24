@@ -6,46 +6,53 @@ const LinkButton = ({ title, subtitle, url, icon: Icon, featured }) => {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group relative flex items-center justify-between w-full p-4 rounded-3xl transition-all duration-500 transform hover:-translate-y-1 active:scale-[0.98] overflow-hidden ${
+      className={`group relative flex items-center justify-between w-full p-4 sm:p-5 rounded-[24px] overflow-hidden ${
         featured
-          ? 'bg-gradient-to-r from-indigo-500/20 to-fuchsia-500/20 border border-indigo-500/30 shadow-[0_8px_32px_rgba(99,102,241,0.15)] hover:shadow-[0_16px_48px_rgba(99,102,241,0.25)] hover:border-indigo-400/50'
+          ? 'glass-panel glass-panel-hover border-white/10'
           : 'glass-panel glass-panel-hover'
       }`}
     >
-      {/* Subtle shine effect on hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-[shine_1.5s_ease-in-out_infinite] pointer-events-none"></div>
+      {/* Dynamic Animated Background for Featured Card */}
+      {featured && (
+        <div className="absolute inset-0 bg-gradient-to-r from-zinc-800/40 via-zinc-700/20 to-zinc-800/40 opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+      )}
 
-      <div className="flex items-center gap-4 relative z-10">
+      {/* Subtle shine effect on hover (sweep animation) */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-[sweep_2s_ease-in-out_infinite] pointer-events-none mix-blend-overlay"></div>
+
+      <div className="flex items-center gap-4 sm:gap-5 relative z-10 w-full">
         {Icon && (
-          <div className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${
+          <div className={`flex shrink-0 items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-[18px] transition-all duration-500 shadow-[inset_0_1px_4px_rgba(255,255,255,0.1)] ${
             featured
-              ? 'bg-indigo-500/20 text-indigo-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.2)]'
-              : 'bg-zinc-800/50 text-zinc-400 group-hover:text-zinc-100 group-hover:bg-zinc-700/50 shadow-[inset_0_1px_4px_rgba(255,255,255,0.05)]'
+              ? 'bg-zinc-100 text-black group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]'
+              : 'bg-zinc-800/60 text-zinc-300 group-hover:bg-zinc-700/80 group-hover:text-white'
           }`}>
-            <Icon size={20} className={featured ? 'drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : ''} />
+            <Icon size={22} className={featured ? 'drop-shadow-sm' : ''} />
           </div>
         )}
-        <div className="flex flex-col">
-          <span className={`font-semibold transition-colors duration-300 ${
-            featured ? 'text-zinc-50 text-base sm:text-lg' : 'text-zinc-200 text-sm sm:text-base group-hover:text-white'
+
+        <div className="flex flex-col flex-grow min-w-0 pr-2">
+          <span className={`font-medium tracking-tight truncate transition-colors duration-300 ${
+            featured ? 'text-zinc-50 text-base sm:text-[17px]' : 'text-zinc-200 text-[15px] sm:text-base group-hover:text-white'
           }`}>
             {title}
           </span>
           {subtitle && (
-            <span className={`text-xs font-medium mt-0.5 ${
-              featured ? 'text-indigo-200/80' : 'text-zinc-500 group-hover:text-zinc-400'
+            <span className={`text-[13px] font-normal truncate mt-0.5 ${
+              featured ? 'text-zinc-400' : 'text-zinc-500 group-hover:text-zinc-400'
             }`}>
               {subtitle}
             </span>
           )}
         </div>
       </div>
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+
+      <div className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-500 relative z-10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] ${
         featured
-          ? 'text-indigo-300 bg-indigo-500/10 group-hover:bg-indigo-500/30'
-          : 'text-zinc-500 group-hover:text-zinc-200 group-hover:bg-white/5'
+          ? 'text-black bg-white group-hover:scale-110'
+          : 'text-zinc-500 bg-zinc-800/40 group-hover:text-zinc-200 group-hover:bg-zinc-700/60'
       }`}>
-        <FaArrowRight className="text-sm transform group-hover:translate-x-1 transition-transform duration-300" />
+        <FaArrowRight className="text-[14px] transform group-hover:translate-x-1 transition-transform duration-500 cubic-bezier(0.2, 0.8, 0.2, 1)" />
       </div>
     </a>
   );
