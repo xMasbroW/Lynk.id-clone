@@ -1,15 +1,19 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppContext } from './context/AppContext';
+import Sidebar from './components/layout/Sidebar';
+import PhonePreview from './components/layout/PhonePreview';
+import MobilePreviewToggle from './components/layout/MobilePreviewToggle';
+import LinkEditor from './components/dashboard/LinkEditor';
+import AnalyticsTab from './components/dashboard/tabs/AnalyticsTab';
+import SettingsTab from './components/dashboard/tabs/SettingsTab';
 import ProfileCard from './components/ProfileCard';
 import LinkButton from './components/LinkButton';
 import SocialIcons from './components/SocialIcons';
 import BottomCTA from './components/BottomCTA';
-import TopNav from './components/TopNav';
-import ProfileEditor from './components/dashboard/ProfileEditor';
-import LinkEditor from './components/dashboard/LinkEditor';
 
 function App() {
-  const { profile, links, isEditMode, theme } = useAppContext();
+  const { theme, isEditMode, profile, links } = useAppContext();
+  const [activeTab, setActiveTab] = useState('links');
 
   // Apply theme to body globally for the scalable theming system
   useEffect(() => {
@@ -20,73 +24,86 @@ function App() {
     }
   }, [theme.mode]);
 
-  return (
-    <div className="min-h-screen pb-36 relative overflow-x-hidden font-sans">
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'links':
+        return <LinkEditor />;
+      case 'analytics':
+        return <AnalyticsTab />;
+      case 'settings':
+        return <SettingsTab />;
+      default:
+        return <LinkEditor />;
+    }
+  };
 
-      {/* Top Navigation / Dashboard Toggle */}
-      <TopNav />
+  // Render Mobile Public View when in Preview Mode
+  if (!isEditMode) {
+    return (
+      <div className="min-h-screen bg-[var(--color-app-bg)] text-[var(--color-app-text)] font-sans transition-colors duration-300 flex flex-col items-center pb-24 relative pt-12 px-5">
+        <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
 
-      {/* High-End Dynamic Ambient Background (Hidden in Edit mode for cleaner workspace) */}
-      {!isEditMode && (
-        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 transition-opacity duration-1000">
-          <div className="absolute top-[-15%] left-[-20%] w-[70vw] h-[70vw] rounded-full bg-[radial-gradient(circle,rgba(63,63,70,0.15)_0%,rgba(0,0,0,0)_70%)] blur-[80px] opacity-70"></div>
-          <div className="absolute top-[20%] right-[-30%] w-[80vw] h-[80vw] rounded-full bg-[radial-gradient(circle,rgba(39,39,42,0.1)_0%,rgba(0,0,0,0)_60%)] blur-[100px] animate-[float_15s_ease-in-out_infinite]"></div>
-          <div className="absolute bottom-[-20%] left-[10%] w-[90vw] h-[50vw] rounded-full bg-[radial-gradient(circle,rgba(24,24,27,0.4)_0%,rgba(0,0,0,0)_70%)] blur-[120px]"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-app-bg)] via-transparent to-[var(--color-app-bg)] opacity-80 mix-blend-overlay"></div>
-          <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
-        </div>
-      )}
+        <MobilePreviewToggle />
 
-      {/* Main container */}
-      <main className="max-w-2xl mx-auto px-5 sm:px-8 w-full relative z-10 flex flex-col pt-24 sm:pt-28">
+        <div className="w-full max-w-md z-10 animate-fade-in">
+          <ProfileCard
+            name={profile.name}
+            bio={profile.bio}
+            avatarUrl={profile.avatarUrl}
+            verified={profile.verified}
+          />
 
-        {isEditMode ? (
-          /* Dashboard Workspace */
-          <div className="animate-fade-in flex flex-col gap-8 w-full">
-            <ProfileEditor />
-            <LinkEditor />
-          </div>
-        ) : (
-          /* Profile Preview Workspace */
-          <>
-            <div className="cinematic-enter">
-              <ProfileCard
-                name={profile.name}
-                bio={profile.bio}
-                avatarUrl={profile.avatarUrl}
-                verified={profile.verified}
+          <div className="w-full flex flex-col gap-3 mt-8">
+            {links.filter(link => link.isActive).map((link) => (
+              <LinkButton
+                key={link.id}
+                id={link.id}
+                title={link.title}
+                subtitle={link.subtitle}
+                url={link.url}
+                iconKey={link.iconKey}
+                featured={link.featured}
+                isActive={link.isActive}
               />
-            </div>
+            ))}
+          </div>
 
-            <div className="w-full flex flex-col gap-3.5 mt-10 cinematic-enter delay-200">
-              {links.filter(link => link.isActive).map((link, index) => (
-                <div key={link.id} className={`cinematic-enter delay-${Math.min((index + 3) * 100, 500)}`}>
-                  <LinkButton
-                    id={link.id}
-                    title={link.title}
-                    subtitle={link.subtitle}
-                    url={link.url}
-                    iconKey={link.iconKey}
-                    featured={link.featured}
-                    isActive={link.isActive}
-                  />
-                </div>
-              ))}
-            </div>
+          <div className="mt-8 flex justify-center pb-8">
+            <SocialIcons />
+          </div>
+        </div>
 
-            <div className="mt-14 cinematic-enter delay-500 flex justify-center pb-8">
-              <SocialIcons />
-            </div>
-          </>
-        )}
-      </main>
-
-      {/* Floating dock CTA area (Only show in preview) */}
-      {!isEditMode && (
-        <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none cinematic-enter delay-500">
+        <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
           <BottomCTA />
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[var(--color-app-bg)] text-[var(--color-app-text)] font-sans transition-colors duration-300">
+
+      {/* Desktop split-pane layout / Mobile stack */}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Main Dashboard Working Area */}
+      <main className="flex-1 overflow-y-auto custom-scrollbar lg:h-screen pb-24 lg:pb-0 relative flex flex-col">
+
+        <MobilePreviewToggle />
+
+        {/* Subtle background noise for texture */}
+        <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
+
+        <div className="max-w-3xl w-full mx-auto p-4 sm:p-8 pt-8 sm:pt-12 relative z-10">
+          <div className="animate-fade-in">
+            {renderContent()}
+          </div>
+        </div>
+      </main>
+
+      {/* Realistic Phone Preview (Desktop Only) */}
+      <PhonePreview />
+
     </div>
   );
 }
