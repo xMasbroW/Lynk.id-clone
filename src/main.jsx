@@ -7,6 +7,15 @@ import App from './App.jsx'
 import { AppProvider } from './context/AppContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.jsx'
+import { validateEnv } from './lib/env.js'
+
+import { initMonitoring } from './lib/monitoring.js'
+
+// Validate environment before booting
+validateEnv()
+
+// Initialize Sentry and global observability
+initMonitoring()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -3,12 +3,19 @@ import { useAuth } from '../../context/AuthContext';
 import { platformConfig } from '../../lib/config';
 import { adminService } from '../../services/adminService';
 import { Navigate } from 'react-router-dom';
-import { FaUsers, FaLink, FaChartLine } from 'react-icons/fa';
+import { FaUsers, FaLink, FaChartLine, FaDollarSign, FaCrown, FaHeartBroken } from 'react-icons/fa';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(null);
-  const [metrics, setMetrics] = useState({ totalUsers: 0, activeLinks: 0, platformViews: 0 });
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    activeLinks: 0,
+    platformViews: 0,
+    activeSubscriptions: 0,
+    mrr: 0,
+    churnRate: 0
+  });
   const [loadingMetrics, setLoadingMetrics] = useState(true);
 
   useEffect(() => {
@@ -65,6 +72,25 @@ export default function AdminDashboard() {
              <FaChartLine /> <span className="text-sm font-medium">Platform Views</span>
            </div>
            <span className="text-3xl font-bold">{loadingMetrics ? '-' : metrics.platformViews.toLocaleString()}</span>
+        </div>
+
+        <div className="glass-panel p-6 rounded-3xl flex flex-col gap-2 border border-emerald-500/20">
+           <div className="flex items-center gap-2 text-emerald-500 font-medium">
+             <FaDollarSign /> <span className="text-sm">MRR Estimation</span>
+           </div>
+           <span className="text-3xl font-bold text-emerald-500">{loadingMetrics ? '-' : `$${metrics.mrr.toLocaleString()}`}</span>
+        </div>
+        <div className="glass-panel p-6 rounded-3xl flex flex-col gap-2">
+           <div className="flex items-center gap-2 text-[var(--color-app-text-muted)]">
+             <FaCrown /> <span className="text-sm font-medium">Active Subscriptions</span>
+           </div>
+           <span className="text-3xl font-bold">{loadingMetrics ? '-' : metrics.activeSubscriptions.toLocaleString()}</span>
+        </div>
+        <div className="glass-panel p-6 rounded-3xl flex flex-col gap-2">
+           <div className="flex items-center gap-2 text-[var(--color-app-text-muted)]">
+             <FaHeartBroken /> <span className="text-sm font-medium">Churn Rate</span>
+           </div>
+           <span className="text-3xl font-bold text-red-400">{loadingMetrics ? '-' : `${metrics.churnRate}%`}</span>
         </div>
       </div>
 

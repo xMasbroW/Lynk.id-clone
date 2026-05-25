@@ -74,6 +74,19 @@ CREATE TABLE analytics_daily_snapshots (
     UNIQUE(user_id, date)
 );
 
+-- 4c. Analytics Materialized View (for high-speed dashboard reads)
+CREATE MATERIALIZED VIEW analytics_materialized AS
+SELECT
+    user_id,
+    date_trunc('day', created_at) as day,
+    count(*) filter (where event_type = 'view') as total_views,
+    count(*) filter (where event_type = 'click') as total_clicks
+FROM analytics_events
+GROUP BY user_id, date_trunc('day', created_at);
+
+-- Unique index to refresh materialized view concurrently
+CREATE UNIQUE INDEX idx_analytics_materialized_user_day ON analytics_materialized(user_id, day);
+
 -- 5. Subscriptions (Billing Prep) Table
 -- 5. Billing Plans (Platform config)
 CREATE TABLE billing_plans (
@@ -104,6 +117,16 @@ CREATE TABLE subscriptions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(user_id)
+);
+
+-- 6a. Billing Events (Audit Trail for Payments)
+CREATE TABLE billing_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL, -- 'checkout.session.completed', 'invoice.paid', 'customer.subscription.deleted'
+    stripe_event_id TEXT UNIQUE NOT NULL,
+    payload JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 7. Workspaces (Multi-tenant Foundation)

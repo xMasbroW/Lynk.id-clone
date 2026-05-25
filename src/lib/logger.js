@@ -21,8 +21,11 @@ export const logger = {
     const traceId = meta.traceId || generateTraceId();
     if (!isProd) {
       console.warn(`[WARN][${traceId}] ${message}`, { ...meta, traceId });
+    } else {
+      import('./monitoring').then(({ captureMessage }) => {
+        captureMessage(message, { ...meta, traceId, level: 'warning' });
+      }).catch(() => {});
     }
-    // TODO: Connect to observability tool (e.g. Sentry.captureMessage)
   },
   error: (error, context = {}) => {
     const traceId = context.traceId || generateTraceId();
@@ -36,7 +39,10 @@ export const logger = {
 
     if (!isProd) {
       console.error(`[ERROR][${traceId}]`, errorDetails, { ...context, traceId });
+    } else {
+      import('./monitoring').then(({ captureException }) => {
+        captureException(error instanceof Error ? error : new Error(String(error)), { ...context, traceId });
+      }).catch(() => {});
     }
-    // TODO: Connect to observability tool (e.g. Sentry.captureException)
   }
 };
