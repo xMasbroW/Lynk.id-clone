@@ -1,15 +1,22 @@
 import { useAppContext } from '../../../context/AppContext';
+import { useEntitlements } from '../../../hooks/useEntitlements';
 import ProfileEditor from '../ProfileEditor';
-import { FaMoon, FaSun } from 'react-icons/fa';
+import { FaMoon, FaSun, FaCrown } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const SettingsTab = () => {
   const { theme, setTheme } = useAppContext();
+  const { hasCustomThemes } = useEntitlements();
 
   const toggleTheme = () => {
     setTheme({ mode: theme.mode === 'dark' ? 'light' : 'dark' });
   };
 
   const handleColorChange = (e) => {
+    if (!hasCustomThemes) {
+      toast.error('Custom colors are a Pro feature. Upgrade to unlock.');
+      return;
+    }
     const { name, value } = e.target;
     setTheme({ [name]: value });
   };
@@ -45,7 +52,14 @@ const SettingsTab = () => {
 
           <div className="w-full h-px bg-[var(--color-app-border)] opacity-50"></div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {!hasCustomThemes && (
+            <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-center gap-3 mb-2">
+              <FaCrown className="text-orange-500 shrink-0" />
+              <p className="text-sm text-orange-500 font-medium">Custom branding and fonts are available on the Pro plan.</p>
+            </div>
+          )}
+
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${!hasCustomThemes ? 'opacity-50 pointer-events-none grayscale-[50%]' : ''}`}>
             <div className="flex flex-col gap-2">
               <label className="text-xs font-medium text-[var(--color-app-text-muted)] uppercase tracking-wider">Button Color</label>
               <div className="flex items-center gap-3">
@@ -54,6 +68,7 @@ const SettingsTab = () => {
                   name="button_color"
                   value={theme.button_color || '#ffffff'}
                   onChange={handleColorChange}
+                  disabled={!hasCustomThemes}
                   className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
                 />
                 <span className="text-sm font-mono bg-[var(--color-app-surface)] px-2 py-1 rounded text-[var(--color-app-text)]">
@@ -70,6 +85,7 @@ const SettingsTab = () => {
                   name="button_text_color"
                   value={theme.button_text_color || '#000000'}
                   onChange={handleColorChange}
+                  disabled={!hasCustomThemes}
                   className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
                 />
                 <span className="text-sm font-mono bg-[var(--color-app-surface)] px-2 py-1 rounded text-[var(--color-app-text)]">
@@ -86,6 +102,7 @@ const SettingsTab = () => {
                   name="background_color"
                   value={theme.background_color || '#0a0a0a'}
                   onChange={handleColorChange}
+                  disabled={!hasCustomThemes}
                   className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
                 />
                 <span className="text-sm font-mono bg-[var(--color-app-surface)] px-2 py-1 rounded text-[var(--color-app-text)]">
@@ -100,6 +117,7 @@ const SettingsTab = () => {
                 name="font_family"
                 value={theme.font_family || 'sans'}
                 onChange={handleColorChange}
+                disabled={!hasCustomThemes}
                 className="bg-[var(--color-app-surface)] border border-[var(--color-app-border)] rounded text-sm text-[var(--color-app-text)] px-3 py-2.5 outline-none"
               >
                 <option value="sans">Modern Sans</option>

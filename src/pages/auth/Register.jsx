@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
+import { platformConfig } from '../../lib/config';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -16,6 +17,12 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!platformConfig.features.enableRegistration) {
+      setError('Registration is currently closed.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -27,6 +34,18 @@ export default function Register() {
       setIsLoading(false);
     }
   };
+
+  if (!platformConfig.features.enableRegistration) {
+    return (
+      <div className="min-h-screen bg-[var(--color-app-bg)] flex items-center justify-center p-4">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-10 text-center max-w-md w-full shadow-2xl">
+           <h1 className="text-2xl font-bold text-[var(--color-app-text)] mb-4">Registration Closed</h1>
+           <p className="text-[var(--color-text-secondary)] mb-6">We are currently not accepting new accounts. Please check back later.</p>
+           <Link to="/login" className="inline-block px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-medium">Return to Login</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-app-bg)] flex items-center justify-center p-4 relative overflow-hidden">

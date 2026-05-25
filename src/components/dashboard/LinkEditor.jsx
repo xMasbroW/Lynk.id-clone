@@ -1,9 +1,20 @@
 import { useAppContext } from '../../context/AppContext';
-import { FaPlus, FaTrash, FaGripVertical, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useEntitlements } from '../../hooks/useEntitlements';
+import { FaPlus, FaTrash, FaGripVertical, FaEye, FaEyeSlash, FaCrown } from 'react-icons/fa';
 import EmptyState from '../EmptyState';
+import toast from 'react-hot-toast';
 
 const LinkEditor = () => {
   const { links, addLink, updateLink, deleteLink, moveLink } = useAppContext();
+  const { maxLinks } = useEntitlements();
+
+  const handleAddLink = () => {
+    if (links.length >= maxLinks) {
+      toast.error(`Plan limit reached. Upgrade to add more than ${maxLinks} links.`);
+      return;
+    }
+    addLink();
+  };
 
   if (links.length === 0) {
     return (
@@ -21,13 +32,20 @@ const LinkEditor = () => {
       <div className="flex items-center justify-between sticky top-0 z-20 bg-[var(--color-app-bg)]/80 backdrop-blur-md py-4 border-b border-transparent">
         <h2 className="text-xl font-semibold tracking-tight text-[var(--color-app-text)]">Manage Links</h2>
         <button
-          onClick={addLink}
-          className="flex items-center gap-2 bg-[var(--color-app-text)] text-[var(--color-app-bg)] px-4 py-2 rounded-full text-sm font-semibold hover:scale-105 active:scale-95 transition-all shadow-sm"
+          onClick={handleAddLink}
+          className="flex items-center gap-2 bg-[var(--color-app-text)] text-[var(--color-app-bg)] px-4 py-2 rounded-full text-sm font-semibold hover:scale-105 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FaPlus size={12} />
           Add Link
         </button>
       </div>
+
+      {links.length >= maxLinks && (
+        <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex items-center gap-3">
+          <FaCrown className="text-orange-500 shrink-0" />
+          <p className="text-sm text-orange-500 font-medium">You've reached your free plan limit of {maxLinks} links. Upgrade to Pro to add more.</p>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         {links.map((link, index) => (

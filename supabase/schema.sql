@@ -75,14 +75,53 @@ CREATE TABLE analytics_daily_snapshots (
 );
 
 -- 5. Subscriptions (Billing Prep) Table
+-- 5. Billing Plans (Platform config)
+CREATE TABLE billing_plans (
+    id TEXT PRIMARY KEY, -- e.g., 'free', 'pro', 'enterprise'
+    name TEXT NOT NULL,
+    max_links INTEGER DEFAULT 5,
+    has_custom_themes BOOLEAN DEFAULT false,
+    has_analytics BOOLEAN DEFAULT false,
+    price_monthly INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Pre-seed billing plans
+INSERT INTO billing_plans (id, name, max_links, has_custom_themes, has_analytics) VALUES
+('free', 'Free', 5, false, false),
+('pro', 'Pro', 50, true, true),
+('enterprise', 'Enterprise', 1000, true, true);
+
+-- 6. Subscriptions Table
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    plan_type TEXT DEFAULT 'free',
+    plan_id TEXT REFERENCES billing_plans(id) DEFAULT 'free',
     status TEXT DEFAULT 'active',
-    ends_at TIMESTAMP WITH TIME ZONE,
+    stripe_customer_id TEXT,
+    stripe_subscription_id TEXT,
+    current_period_end TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id)
+);
+
+-- 7. Workspaces (Multi-tenant Foundation)
+CREATE TABLE workspaces (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 8. API Keys (Developer Platform Foundation)
+CREATE TABLE api_keys (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+    key_hash TEXT NOT NULL, -- Never store raw API keys
+    name TEXT NOT NULL,
+    last_used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Performance Indexing
@@ -101,6 +140,14 @@ ALTER TABLE links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics_daily_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE billing_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+
+-- Policies for platform config
+CREATE POLICY "Billing plans are viewable by everyone."
+    ON billing_plans FOR SELECT
+    USING (true);
 
 -- Policies for profiles
 CREATE POLICY "Public profiles are viewable by everyone."
@@ -149,6 +196,20 @@ CREATE POLICY "Users can delete own links."
 CREATE POLICY "Users can view their own subscriptions."
     ON subscriptions FOR SELECT
     USING (auth.uid() = user_id);
+
+-- Policies for workspaces
+CREATE POLICY "Users can view their own workspaces."
+    ON workspaces FOR SELECT
+    USING (auth.uid() = owner_id);
+
+-- Policies for API Keys
+CREATE POLICY "Users can manage API keys for their workspaces."
+    ON api_keys FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM workspaces WHERE workspaces.id = api_keys.workspace_id AND workspaces.owner_id = auth.uid()
+        )
+    );
 
 -- Policies for analytics
 CREATE POLICY "Users can view their own analytics."
@@ -216,6 +277,12 @@ BEGIN
 
   -- Create initial analytics record
   INSERT INTO public.analytics (user_id) VALUES (new.id);
+
+  -- Give user a default free subscription
+  INSERT INTO public.subscriptions (user_id, plan_id) VALUES (new.id, 'free');
+
+  -- Create default workspace
+  INSERT INTO public.workspaces (name, owner_id) VALUES ('Personal Workspace', new.id);
 
   RETURN new;
 END;
