@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { platformConfig } from '../../lib/config';
 import { adminService } from '../../services/adminService';
 import { Navigate } from 'react-router-dom';
-import { FaUsers, FaLink, FaChartLine, FaDollarSign, FaCrown, FaHeartBroken } from 'react-icons/fa';
+import { FaUsers, FaLink, FaChartLine, FaDollarSign, FaCrown, FaHeartBroken, FaCogs, FaBug, FaProjectDiagram } from 'react-icons/fa';
+import { metrics as executionMetrics } from '../../lib/observability/metrics';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -15,6 +16,12 @@ export default function AdminDashboard() {
     activeSubscriptions: 0,
     mrr: 0,
     churnRate: 0
+  });
+  const [execStats, setExecStats] = useState({
+      pendingJobs: 0,
+      deadLetterJobs: 0,
+      activeWorkflows: 0,
+      failedWorkflows: 0
   });
   const [loadingMetrics, setLoadingMetrics] = useState(true);
 
@@ -35,8 +42,19 @@ export default function AdminDashboard() {
     if (isAdmin) {
       const fetchMetrics = async () => {
         try {
-           const data = await adminService.getDashboardMetrics();
+           const [data, queueStats, dlqStats, workflowStats] = await Promise.all([
+               adminService.getDashboardMetrics(),
+               executionMetrics.getQueueStats(),
+               executionMetrics.getDeadLetterStats(),
+               executionMetrics.getWorkflowRunStats()
+           ]);
+
            setMetrics(data);
+           setExecStats({
+               ...queueStats,
+               ...dlqStats,
+               ...workflowStats
+           });
         } catch (error) {
            console.error("Failed to load admin metrics", error);
         } finally {
@@ -94,7 +112,38 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Execution Observability Panel */}
+      <h2 className="text-2xl font-bold mt-12 mb-6 tracking-tight flex items-center gap-2">
+        <FaCogs className="text-gray-400" /> Automation & Queue Metrics
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="glass-panel p-6 rounded-3xl flex flex-col gap-2 border border-blue-500/20">
+           <div className="flex items-center gap-2 text-blue-400">
+             <FaCogs /> <span className="text-sm font-medium">Pending Jobs</span>
+           </div>
+           <span className="text-3xl font-bold text-blue-400">{loadingMetrics ? '-' : execStats.pendingJobs}</span>
+        </div>
+        <div className="glass-panel p-6 rounded-3xl flex flex-col gap-2 border border-red-500/20">
+           <div className="flex items-center gap-2 text-red-400">
+             <FaBug /> <span className="text-sm font-medium">Dead Letter Queue</span>
+           </div>
+           <span className="text-3xl font-bold text-red-400">{loadingMetrics ? '-' : execStats.deadLetterJobs}</span>
+        </div>
+        <div className="glass-panel p-6 rounded-3xl flex flex-col gap-2 border border-purple-500/20">
+           <div className="flex items-center gap-2 text-purple-400">
+             <FaProjectDiagram /> <span className="text-sm font-medium">Active Workflows</span>
+           </div>
+           <span className="text-3xl font-bold text-purple-400">{loadingMetrics ? '-' : execStats.activeWorkflows}</span>
+        </div>
+        <div className="glass-panel p-6 rounded-3xl flex flex-col gap-2 border border-orange-500/20">
+           <div className="flex items-center gap-2 text-orange-400">
+             <FaHeartBroken /> <span className="text-sm font-medium">Failed Workflows</span>
+           </div>
+           <span className="text-3xl font-bold text-orange-400">{loadingMetrics ? '-' : execStats.failedWorkflows}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
         <div className="glass-panel p-6 rounded-3xl">
           <h2 className="text-xl font-semibold mb-4 text-red-500">Kill Switches</h2>
           <div className="flex flex-col gap-4">

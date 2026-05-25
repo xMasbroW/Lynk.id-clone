@@ -370,3 +370,69 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- ==========================================
+-- PHASE 11: DISTRIBUTED AUTOMATION PIPELINE
+-- ==========================================
+
+-- 12. Job Queue Architecture
+CREATE TABLE jobs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    queue_name TEXT NOT NULL,
+    job_type TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    status TEXT DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed'
+    retries INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+    last_error TEXT,
+    run_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    deduplication_id TEXT UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Index for worker polling
+CREATE INDEX idx_jobs_pending ON jobs(queue_name, status, run_at) WHERE status = 'pending';
+
+-- 13. AI Execution Logs
+CREATE TABLE ai_execution_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    prompt_type TEXT NOT NULL,
+    tokens_used INTEGER DEFAULT 0,
+    model_used TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 14. Expand Automation Tables (Workflow Engine)
+ALTER TABLE automation_workflows
+ADD COLUMN definition JSONB,
+ADD COLUMN description TEXT;
+
+ALTER TABLE automation_runs
+ADD COLUMN current_node_id TEXT,
+ADD COLUMN context JSONB,
+ADD COLUMN error TEXT,
+ADD COLUMN completed_at TIMESTAMP WITH TIME ZONE;
+
+-- RPC for fetching and locking jobs safely in Postgres
+CREATE OR REPLACE FUNCTION fetch_pending_jobs(p_queue_name TEXT, p_limit INTEGER)
+RETURNS SETOF jobs AS $$
+BEGIN
+  RETURN QUERY
+  UPDATE jobs
+  SET status = 'processing'
+  WHERE id IN (
+    SELECT id
+    FROM jobs
+    WHERE queue_name = p_queue_name
+      AND status = 'pending'
+      AND run_at <= timezone('utc'::text, now())
+    ORDER BY run_at ASC
+    FOR UPDATE SKIP LOCKED
+    LIMIT p_limit
+  )
+  RETURNING *;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
