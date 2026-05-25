@@ -1,15 +1,18 @@
 import { supabase } from '../lib/supabase';
+import { swrCache } from '../utils/cache';
 
 export const linkService = {
   async getLinks(userId) {
-    const { data, error } = await supabase
-      .from('links')
-      .select('*')
-      .eq('user_id', userId)
-      .order('order_index', { ascending: true });
+    return swrCache.fetch(`links_user_${userId}`, async () => {
+      const { data, error } = await supabase
+        .from('links')
+        .select('*')
+        .eq('user_id', userId)
+        .order('order_index', { ascending: true });
 
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data;
+    }, 30000); // 30 sec TTL
   },
 
   async addLink(userId, linkData) {

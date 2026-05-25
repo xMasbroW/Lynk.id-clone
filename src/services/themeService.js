@@ -1,15 +1,18 @@
 import { supabase } from '../lib/supabase';
+import { swrCache } from '../utils/cache';
 
 export const themeService = {
   async getTheme(userId) {
-    const { data, error } = await supabase
-      .from('themes')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    return swrCache.fetch(`theme_user_${userId}`, async () => {
+      const { data, error } = await supabase
+        .from('themes')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
 
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data;
+    }, 60000); // 1 min TTL
   },
 
   async updateTheme(userId, updates) {

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { swrCache } from '../utils/cache';
 
 export const profileService = {
   async isUsernameAvailable(username) {
@@ -37,14 +38,16 @@ export const profileService = {
   },
 
   async getProfileByUsername(username) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('username', username)
-      .single();
+    return swrCache.fetch(`profile_username_${username}`, async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
 
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data;
+    }, 60000); // 1 minute TTL for public profile lookups to reduce DB load
   },
 
   async getProfile(userId) {

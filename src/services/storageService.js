@@ -1,34 +1,78 @@
 import { supabase } from '../lib/supabase';
 
 export const storageService = {
-  async uploadAvatar(userId, file) {
-    // Validate file size strictly (2MB max) to prevent storage exhaustion
-    if (file.size > 2 * 1024 * 1024) {
-      throw new Error('File exceeds maximum size of 2MB.');
+  /**
+   * Compresses an image client-side to reduce bandwidth and storage overhead
+   * before sending it to the backend or generating a signed URL.
+   */
+  async compressImage(file, maxWidth = 800, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name, { type: 'image/webp', lastModified: Date.now() }));
+          } else {
+            reject(new Error('Canvas to Blob conversion failed'));
+          }
+        }, 'image/webp', quality);
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image for compression'));
+      img.src = url;
+    });
+  },
+
+  async uploadAvatar(userId, rawFile) {
+    // Validate file size strictly (5MB max before compression)
+    if (rawFile.size > 5 * 1024 * 1024) {
+      throw new Error('File exceeds maximum size of 5MB.');
     }
 
     // Validate MIME type to prevent arbitrary execution or XSS via SVG
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedMimeTypes.includes(file.type)) {
+    if (!allowedMimeTypes.includes(rawFile.type)) {
       throw new Error('Invalid file type. Only JPEG, PNG, and WebP are allowed.');
     }
 
-    // Sanitize file name to prevent directory traversal or injection attacks
-    const fileExt = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '');
-    const cleanExt = ['jpg', 'jpeg', 'png', 'webp'].includes(fileExt.toLowerCase()) ? fileExt.toLowerCase() : 'jpg';
+    // Compress file to WebP client-side to save on egress and storage
+    const file = await this.compressImage(rawFile);
 
-    // Generate secure randomized filename to prevent overwriting
-    const fileName = `${userId}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${cleanExt}`;
-    const filePath = `${fileName}`;
+    // Sanitize file name
+    const fileName = `${userId}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;
+    const filePath = `avatars/${fileName}`;
+
+    // Note: In a true zero-trust distributed setup, we would request a signedUploadUrl from an Edge Function here
+    // const { signedUrl } = await apiClient.invokeFunction('create-signed-upload', { filePath });
+    // For this tier, direct supabase storage upload with RLS is sufficient.
 
     const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file, { upsert: true });
+      .from('media') // Centralized media bucket
+      .upload(filePath, file, {
+        cacheControl: '31536000', // Cache aggressively (1 year)
+        upsert: false // Immutable blobs
+      });
 
     if (uploadError) throw uploadError;
 
     const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
+      .from('media')
       .getPublicUrl(filePath);
 
     return publicUrl;

@@ -53,6 +53,27 @@ CREATE TABLE analytics (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 4a. Analytics Events (Append-only for scale)
+CREATE TABLE analytics_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    link_id UUID REFERENCES links(id) ON DELETE SET NULL, -- nullable for profile views
+    event_type TEXT NOT NULL, -- 'view' or 'click'
+    device_type TEXT DEFAULT 'desktop',
+    referrer_url TEXT DEFAULT 'direct',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 4b. Analytics Daily Snapshots (Aggregated scale)
+CREATE TABLE analytics_daily_snapshots (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    views INTEGER DEFAULT 0,
+    clicks INTEGER DEFAULT 0,
+    UNIQUE(user_id, date)
+);
+
 -- 5. Subscriptions (Billing Prep) Table
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -68,6 +89,8 @@ CREATE TABLE subscriptions (
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
 CREATE INDEX IF NOT EXISTS idx_links_user_id ON links(user_id);
 CREATE INDEX IF NOT EXISTS idx_themes_user_id ON themes(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_user_id ON analytics_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at);
 
 -- Set up Row Level Security (RLS)
 
@@ -76,6 +99,8 @@ ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE themes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics_daily_snapshots ENABLE ROW LEVEL SECURITY;
 
 -- Policies for profiles
 CREATE POLICY "Public profiles are viewable by everyone."
@@ -131,9 +156,20 @@ CREATE POLICY "Users can view their own analytics."
     USING (auth.uid() = user_id);
 
 -- RPC for incrementing views
-CREATE OR REPLACE FUNCTION increment_view(target_user_id UUID, device_type TEXT DEFAULT 'desktop', referrer_url TEXT DEFAULT 'direct')
+CREATE OR REPLACE FUNCTION increment_view(target_user_id UUID, p_device_type TEXT DEFAULT 'desktop', p_referrer_url TEXT DEFAULT 'direct')
 RETURNS void AS $$
 BEGIN
+  -- 1. Insert into append-only events table
+  INSERT INTO public.analytics_events (user_id, event_type, device_type, referrer_url)
+  VALUES (target_user_id, 'view', p_device_type, p_referrer_url);
+
+  -- 2. Upsert daily snapshot
+  INSERT INTO public.analytics_daily_snapshots (user_id, date, views)
+  VALUES (target_user_id, CURRENT_DATE, 1)
+  ON CONFLICT (user_id, date) DO UPDATE
+  SET views = public.analytics_daily_snapshots.views + 1;
+
+  -- 3. Update legacy aggregated table (can be deprecated later)
   UPDATE public.analytics
   SET total_views = total_views + 1,
       updated_at = timezone('utc'::text, now())
@@ -145,6 +181,17 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION increment_click(target_user_id UUID, target_link_id UUID)
 RETURNS void AS $$
 BEGIN
+  -- 1. Insert into append-only events table
+  INSERT INTO public.analytics_events (user_id, link_id, event_type)
+  VALUES (target_user_id, target_link_id, 'click');
+
+  -- 2. Upsert daily snapshot
+  INSERT INTO public.analytics_daily_snapshots (user_id, date, clicks)
+  VALUES (target_user_id, CURRENT_DATE, 1)
+  ON CONFLICT (user_id, date) DO UPDATE
+  SET clicks = public.analytics_daily_snapshots.clicks + 1;
+
+  -- 3. Update legacy aggregated table
   UPDATE public.analytics
   SET total_clicks = total_clicks + 1,
       updated_at = timezone('utc'::text, now())
