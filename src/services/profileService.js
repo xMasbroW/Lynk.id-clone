@@ -2,15 +2,29 @@ import { supabase } from '../lib/supabase';
 
 export const profileService = {
   async isUsernameAvailable(username) {
-    const reservedWords = ['admin', 'login', 'register', 'dashboard', 'settings', 'api', 'help', 'support', 'support', 'about', 'contact', 'terms', 'privacy'];
+    // Extensive list of reserved routes and sensitive words to prevent routing collisions and phishing
+    const reservedWords = [
+      'admin', 'login', 'register', 'dashboard', 'settings', 'api', 'help', 'support',
+      'about', 'contact', 'terms', 'privacy', 'root', 'sysadmin', 'security', 'billing',
+      'pricing', 'forgot-password', 'reset-password', 'auth', 'oauth', 'blog', 'careers',
+      'jobs', 'press', 'media', 'status', 'features', 'product', 'download', 'app', 'assets',
+      'static', 'public', 'images', 'styles', 'scripts', 'css', 'js', 'lynkid', 'team'
+    ];
 
-    if (reservedWords.includes(username.toLowerCase())) {
+    const normalizedUsername = username.toLowerCase();
+
+    if (reservedWords.includes(normalizedUsername)) {
       return false;
     }
 
-    // sanitize string - only letters, numbers, underscores, and hyphens
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      throw new Error('Username can only contain letters, numbers, hyphens, and underscores.');
+    // Restrict length to prevent DB bloat and UI breaking
+    if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
+      throw new Error('Username must be between 3 and 30 characters.');
+    }
+
+    // sanitize string - only letters, numbers, underscores, and hyphens, no consecutive hyphens/underscores
+    if (!/^[a-zA-Z0-9_-]+$/.test(normalizedUsername) || /--|__/.test(normalizedUsername)) {
+      throw new Error('Username can only contain letters, numbers, hyphens, and underscores without consecutive special characters.');
     }
 
     const { count, error } = await supabase

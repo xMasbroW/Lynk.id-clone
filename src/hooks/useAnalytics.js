@@ -1,19 +1,15 @@
 import { useEffect, useCallback } from 'react';
+import { analyticsService } from '../services/analyticsService';
 
 /**
- * Future-ready analytics hook structure.
- * Currently logs to console, but can easily be wired up to PostHog, Mixpanel, Google Analytics, etc.
+ * Production-ready analytics hook with abuse prevention.
  */
 export const useAnalytics = () => {
-  // Setup analytics initialization
   useEffect(() => {
-    // e.g., mixpanel.init('YOUR_TOKEN');
     console.log('[Analytics] Initialized');
   }, []);
 
   const trackEvent = useCallback((eventName, properties = {}) => {
-    // Example: send to backend or analytics provider
-    // mixpanel.track(eventName, properties);
     console.log(`[Analytics Track] ${eventName}`, properties);
   }, []);
 
@@ -21,10 +17,28 @@ export const useAnalytics = () => {
     console.log(`[Analytics PageView] ${pageName}`);
   }, []);
 
-  const trackLinkClick = useCallback((linkId, url) => {
-    trackEvent('Link Clicked', { linkId, url });
-    // In a real app we would pass the target user's ID to increment the specific click count via RPC
-    // analyticsService.recordClick(targetUserId, linkId).catch(() => {});
+  // Use session storage to prevent a single user from spamming clicks on the same link
+  const trackLinkClick = useCallback(async (linkId, targetUserId) => {
+    trackEvent('Link Clicked', { linkId });
+
+    if (!targetUserId || !linkId) return;
+
+    const cooldownKey = `click_cooldown_${linkId}`;
+    const lastClick = sessionStorage.getItem(cooldownKey);
+    const now = Date.now();
+
+    // 5-second cooldown per link per session to prevent rapid-fire abuse
+    if (lastClick && now - parseInt(lastClick, 10) < 5000) {
+      return;
+    }
+
+    sessionStorage.setItem(cooldownKey, now.toString());
+
+    try {
+      await analyticsService.recordClick(targetUserId, linkId);
+    } catch (err) {
+      console.warn("Analytics recording failed", err);
+    }
   }, [trackEvent]);
 
   return { trackEvent, trackPageView, trackLinkClick };

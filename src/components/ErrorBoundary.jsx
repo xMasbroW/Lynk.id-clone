@@ -12,8 +12,10 @@ export class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // You can also log the error to an error reporting service like Sentry or LogRocket here
-    console.error("Uncaught error:", error, errorInfo);
+    // Import logger dynamically to avoid class scope circular deps if not careful, though direct import is fine
+    import('../lib/logger').then(({ logger }) => {
+      logger.error(error, { errorInfo, source: 'ErrorBoundary' });
+    });
   }
 
   render() {

@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { FaArrowRight } from 'react-icons/fa';
 import { iconMap } from '../utils/iconMap';
 import { useAnalytics } from '../hooks/useAnalytics';
 
-const LinkButton = ({ id, title, subtitle, url, iconKey, featured, isActive }) => {
+const LinkButton = memo(({ id, title, subtitle, url, iconKey, featured, isActive }) => {
   const { trackLinkClick } = useAnalytics();
 
   if (!isActive) return null;
@@ -72,6 +73,8 @@ const LinkButton = ({ id, title, subtitle, url, iconKey, featured, isActive }) =
       </div>
     </a>
   );
-};
+});
+
+LinkButton.displayName = 'LinkButton';
 
 export default LinkButton;

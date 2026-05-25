@@ -64,6 +64,11 @@ CREATE TABLE subscriptions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Performance Indexing
+CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
+CREATE INDEX IF NOT EXISTS idx_links_user_id ON links(user_id);
+CREATE INDEX IF NOT EXISTS idx_themes_user_id ON themes(user_id);
+
 -- Set up Row Level Security (RLS)
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

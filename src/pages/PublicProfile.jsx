@@ -72,8 +72,16 @@ export default function PublicProfile() {
             }
           }
 
-          // Record Analytics View silently
-          analyticsService.recordView(profile.id).catch(() => {});
+          // Record Analytics View silently with a cooldown
+          const viewCooldownKey = `view_cooldown_${profile.id}`;
+          const lastView = sessionStorage.getItem(viewCooldownKey);
+          const now = Date.now();
+
+          // 1 hour cooldown per profile per session to prevent rapid-fire view inflation
+          if (!lastView || now - parseInt(lastView, 10) > 3600000) {
+            sessionStorage.setItem(viewCooldownKey, now.toString());
+            analyticsService.recordView(profile.id).catch(() => {});
+          }
         }
       } catch (err) {
         if (isMounted) setError(err.message || 'Failed to load profile');
