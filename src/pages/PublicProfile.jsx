@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { profileService } from '../services/profileService';
 import { linkService } from '../services/linkService';
 import { themeService } from '../services/themeService';
 import { analyticsService } from '../services/analyticsService';
+import { useTracking } from '../hooks/useTracking';
 import ProfileCard from '../components/ProfileCard';
 import LinkButton from '../components/LinkButton';
 import SocialIcons from '../components/SocialIcons';
 import BottomCTA from '../components/BottomCTA';
+import { SEO } from '../components/SEO';
 
 export default function PublicProfile() {
   const { username } = useParams();
+  const { trackEvent, EVENT_TYPES } = useTracking();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [profileData, setProfileData] = useState({
@@ -81,6 +83,7 @@ export default function PublicProfile() {
           if (!lastView || now - parseInt(lastView, 10) > 3600000) {
             sessionStorage.setItem(viewCooldownKey, now.toString());
             analyticsService.recordView(profile.id).catch(() => {});
+            trackEvent(EVENT_TYPES.PROFILE_VIEW, { profile_id: profile.id });
           }
         }
       } catch (err) {
@@ -127,14 +130,13 @@ export default function PublicProfile() {
 
   return (
     <>
-      <Helmet>
-        <title>{profile.full_name} | Lynk</title>
-        <meta name="description" content={profile.bio || `Check out ${profile.full_name}'s links`} />
-        <meta property="og:title" content={`${profile.full_name} | Lynk`} />
-        <meta property="og:description" content={profile.bio || `Check out ${profile.full_name}'s links`} />
-        {profile.avatar_url && <meta property="og:image" content={profile.avatar_url} />}
-        <meta name="twitter:card" content="summary_large_image" />
-      </Helmet>
+      <SEO
+        title={profile.full_name}
+        description={profile.bio || `Check out ${profile.full_name}'s links`}
+        image={profile.avatar_url}
+        profileName={profile.full_name}
+        url={typeof window !== 'undefined' ? window.location.href : ''}
+      />
 
       <div className="min-h-screen bg-[var(--color-app-bg)] text-[var(--color-app-text)] font-sans transition-colors duration-300 flex flex-col items-center pb-24 relative pt-12 px-5">
         <div className="absolute inset-0 opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
@@ -170,6 +172,16 @@ export default function PublicProfile() {
         <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
           <BottomCTA />
         </div>
+
+        {/* Virality Badge */}
+        <a
+          href={`/?utm_source=profile_badge&utm_medium=referral&utm_campaign=${username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-16 mb-8 text-[11px] font-medium tracking-wide text-[var(--color-app-text-muted)] hover:text-[var(--color-app-text)] transition-colors uppercase opacity-70 hover:opacity-100 flex items-center gap-1.5"
+        >
+          Powered by <span className="font-bold">Lynk</span>
+        </a>
       </div>
     </>
   );

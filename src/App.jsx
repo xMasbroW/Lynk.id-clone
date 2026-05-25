@@ -10,6 +10,7 @@ const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 
 function App() {
   const location = useLocation();
@@ -33,6 +34,7 @@ function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
             {/* Public Profile Route - Catch All */}

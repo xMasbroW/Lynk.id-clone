@@ -1,5 +1,8 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { useOnboarding } from '../hooks/useOnboarding';
+import { OnboardingWizard } from '../components/onboarding/OnboardingWizard';
+import { AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/layout/Sidebar';
 import PhonePreview from '../components/layout/PhonePreview';
 import MobilePreviewToggle from '../components/layout/MobilePreviewToggle';
@@ -13,7 +16,8 @@ const AnalyticsTab = lazy(() => import('../components/dashboard/tabs/AnalyticsTa
 const SettingsTab = lazy(() => import('../components/dashboard/tabs/SettingsTab'));
 
 function App() {
-  const { theme, isEditMode, profile, links, isLoading } = useAppContext();
+  const { theme, isEditMode, profile, links, isLoading: appLoading } = useAppContext();
+  const { isOnboarded, isLoading: onboardingLoading, completeOnboarding, skipOnboarding } = useOnboarding();
   const [activeTab, setActiveTab] = useState('links');
 
   // Apply theme to body globally for the scalable theming system
@@ -80,7 +84,7 @@ function App() {
     );
   };
 
-  if (isLoading) {
+  if (appLoading || onboardingLoading) {
     return (
       <div className="min-h-screen bg-[var(--color-app-bg)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--color-app-border)] border-t-[var(--color-app-text)] rounded-full animate-spin"></div>
@@ -90,6 +94,11 @@ function App() {
 
   return (
     <>
+      <AnimatePresence>
+        {!isOnboarded && (
+          <OnboardingWizard onComplete={completeOnboarding} onSkip={skipOnboarding} />
+        )}
+      </AnimatePresence>
       {/* Mobile Public View - Rendered conditionally on mobile when not in edit mode */}
       {!isEditMode && (
         <div className="lg:hidden min-h-screen bg-[var(--color-app-bg)] text-[var(--color-app-text)] font-sans transition-colors duration-300 flex flex-col items-center pb-24 relative pt-12 px-5">
