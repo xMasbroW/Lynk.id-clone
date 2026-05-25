@@ -2,8 +2,10 @@ import { useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { storageService } from '../../services/storageService';
+import { aiService } from '../../services/aiService';
+import { useAsyncAction } from '../../hooks/useAsyncAction';
 import toast from 'react-hot-toast';
-import { FaCloudUploadAlt, FaSpinner } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaSpinner, FaMagic } from 'react-icons/fa';
 
 const ProfileEditor = () => {
   const { profile, setProfile } = useAppContext();
@@ -15,6 +17,15 @@ const ProfileEditor = () => {
     const { name, value, type, checked } = e.target;
     setProfile({ [name]: type === 'checkbox' ? checked : value });
   };
+
+  const generateBio = async () => {
+    const context = `Name: ${profile.full_name}, Links context: My links.`;
+    const newBio = await aiService.generateBio(context);
+    setProfile({ bio: newBio });
+    toast.success('Bio optimized with AI!');
+  };
+
+  const { execute: handleAIGenerate, isPending: aiPending } = useAsyncAction(generateBio);
 
   const uploadAvatar = async (event) => {
     try {
@@ -108,10 +119,20 @@ const ProfileEditor = () => {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-[var(--color-app-text-muted)]">Bio</label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-[var(--color-app-text-muted)]">Bio</label>
+          <button
+            onClick={handleAIGenerate}
+            disabled={aiPending}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-[var(--color-app-text)] text-[var(--color-app-bg)] px-3 py-1 rounded-full hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {aiPending ? <FaSpinner className="animate-spin" /> : <FaMagic />}
+            {aiPending ? 'Writing...' : 'AI Magic'}
+          </button>
+        </div>
         <textarea
           name="bio"
-          value={profile.bio}
+          value={profile.bio || ''}
           onChange={handleChange}
           rows="3"
           className="bg-[var(--color-app-surface)] border border-[var(--color-app-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-app-text)] focus:outline-none focus:border-[var(--color-app-text)] transition-colors resize-none"

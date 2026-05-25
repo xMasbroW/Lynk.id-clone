@@ -8,6 +8,7 @@ import { AppProvider } from './context/AppContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.jsx'
 import { validateEnv } from './lib/env.js'
+import './registerSW'
 
 import { initMonitoring } from './lib/monitoring.js'
 

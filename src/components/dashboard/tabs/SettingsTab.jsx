@@ -134,6 +134,23 @@ const SettingsTab = () => {
         <ProfileEditor />
       </div>
 
+      <div className="flex flex-col gap-6">
+        <h3 className="text-sm font-semibold text-[var(--color-app-text)] uppercase tracking-wider">Developer Platform</h3>
+        <div className="glass-panel p-6 rounded-3xl w-full flex flex-col gap-5">
+           <h2 className="text-xl font-semibold tracking-tight text-[var(--color-app-text)]">API Keys</h2>
+           <p className="text-sm text-[var(--color-app-text-muted)]">Generate scoped API keys to integrate your workspace with external platforms. Keep your tokens secure.</p>
+           <div className="bg-[var(--color-app-surface)] border border-[var(--color-app-border)] rounded-xl p-4 flex flex-col gap-3 items-center justify-center text-center">
+             <span className="text-[var(--color-app-text-muted)] text-sm font-medium">You don't have any active API keys.</span>
+             <button
+               onClick={() => toast.error('API key generation requires a Pro or Enterprise workspace.')}
+               className="bg-[var(--color-app-text)] text-[var(--color-app-bg)] px-4 py-2 rounded-lg text-sm font-medium transition-all"
+             >
+               Generate New Key
+             </button>
+           </div>
+        </div>
+      </div>
+
     </div>
   );
 };

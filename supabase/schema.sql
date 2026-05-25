@@ -137,6 +137,16 @@ CREATE TABLE workspaces (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 7a. Workspace Members
+CREATE TABLE workspace_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    role TEXT DEFAULT 'viewer', -- 'owner', 'admin', 'editor', 'viewer'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(workspace_id, user_id)
+);
+
 -- 8. API Keys (Developer Platform Foundation)
 CREATE TABLE api_keys (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -144,6 +154,46 @@ CREATE TABLE api_keys (
     key_hash TEXT NOT NULL, -- Never store raw API keys
     name TEXT NOT NULL,
     last_used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 9. Marketplace Templates
+CREATE TABLE marketplace_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    theme_data JSONB NOT NULL,
+    price_cents INTEGER DEFAULT 0,
+    clones INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 10. Automation Workflows
+CREATE TABLE automation_workflows (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    trigger_type TEXT NOT NULL,
+    action_payload JSONB NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE automation_runs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workflow_id UUID REFERENCES automation_workflows(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'pending', -- 'pending', 'success', 'failed'
+    logs JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 11. Growth & Affiliates
+CREATE TABLE referral_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    referrer_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    referred_user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -165,7 +215,12 @@ ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics_daily_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE billing_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workspace_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE marketplace_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE automation_workflows ENABLE ROW LEVEL SECURITY;
+ALTER TABLE automation_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_events ENABLE ROW LEVEL SECURITY;
 
 -- Policies for platform config
 CREATE POLICY "Billing plans are viewable by everyone."

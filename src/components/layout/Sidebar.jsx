@@ -1,8 +1,29 @@
-import { FaLink, FaChartBar, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { FaLink, FaChartBar, FaCog, FaSignOutAlt, FaBell } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { notificationService } from '../../services/notificationService';
+import toast from 'react-hot-toast';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Load initial unread count
+    notificationService.getUnreadCount(user.id).then(setUnreadCount);
+
+    // Subscribe to realtime broadcasts
+    const sub = notificationService.subscribeToNotifications(user.id, (payload) => {
+      setUnreadCount(prev => prev + 1);
+      toast(payload.payload.message || 'New notification received!', { icon: '🔔' });
+    });
+
+    return () => {
+      if (sub) sub.unsubscribe();
+    };
+  }, [user]);
 
   const tabs = [
     { id: 'links', label: 'Links', icon: FaLink },
@@ -14,8 +35,17 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     <aside className="w-full lg:w-64 shrink-0 flex flex-col bg-[var(--color-app-surface)] border-r border-[var(--color-app-border)] backdrop-blur-xl z-30 fixed lg:relative bottom-0 lg:bottom-auto left-0 right-0 lg:h-screen transition-colors duration-300">
 
       {/* Brand Header - Desktop only */}
-      <div className="hidden lg:flex items-center px-6 h-16 border-b border-[var(--color-app-border)]">
+      <div className="hidden lg:flex items-center justify-between px-6 h-16 border-b border-[var(--color-app-border)]">
         <span className="font-semibold text-[15px] tracking-tight text-[var(--color-app-text)]">Lynk Platform</span>
+        <button className="relative text-[var(--color-app-text-muted)] hover:text-[var(--color-app-text)] transition-colors">
+          <FaBell size={14} />
+          {unreadCount > 0 && (
+             <span className="absolute -top-1 -right-1 flex h-2 w-2">
+               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+             </span>
+          )}
+        </button>
       </div>
 
       {/* Navigation */}
