@@ -34,9 +34,9 @@ const ProfileEditor = () => {
         throw new Error('You must select an image to upload.');
       }
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name ? file.name.split('.').pop() : '';
       // basic validation
-      if (!['jpg', 'jpeg', 'png', 'webp'].includes(fileExt.toLowerCase())) {
+      if (!fileExt || typeof fileExt !== 'string' || !['jpg', 'jpeg', 'png', 'webp'].includes(fileExt.toLowerCase())) {
          throw new Error('Only image files are allowed.');
       }
       if (file.size > 2 * 1024 * 1024) {

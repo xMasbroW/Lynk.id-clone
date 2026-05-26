@@ -3,6 +3,8 @@ import { swrCache } from '../utils/cache';
 
 export const profileService = {
   async isUsernameAvailable(username) {
+    if (typeof username !== 'string' || !username.trim()) return false;
+
     // Extensive list of reserved routes and sensitive words to prevent routing collisions and phishing
     const reservedWords = [
       'admin', 'login', 'register', 'dashboard', 'settings', 'api', 'help', 'support',
@@ -12,7 +14,7 @@ export const profileService = {
       'static', 'public', 'images', 'styles', 'scripts', 'css', 'js', 'lynkid', 'team'
     ];
 
-    const normalizedUsername = username.toLowerCase();
+    const normalizedUsername = username.trim().toLowerCase();
 
     if (reservedWords.includes(normalizedUsername)) {
       return false;
@@ -31,18 +33,21 @@ export const profileService = {
     const { count, error } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .eq('username', username.toLowerCase());
+      .eq('username', normalizedUsername);
 
     if (error) throw error;
     return count === 0;
   },
 
   async getProfileByUsername(username) {
-    return swrCache.fetch(`profile_username_${username}`, async () => {
+    if (typeof username !== 'string' || !username.trim()) return null;
+    const normalizedUsername = username.trim().toLowerCase();
+
+    return swrCache.fetch(`profile_username_${normalizedUsername}`, async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('username', username)
+        .eq('username', normalizedUsername)
         .single();
 
       if (error) throw error;
