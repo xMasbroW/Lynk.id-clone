@@ -11,10 +11,10 @@ import { profileService } from './profileService';
 export const authService = {
   async register(email, password, fullName, username) {
     // Thoroughly normalize inputs to prevent any undefined issues
-    const normEmail = typeof email === 'string' ? email.trim() : '';
-    const normPassword = typeof password === 'string' ? password : '';
-    const normFullName = typeof fullName === 'string' ? fullName.trim() : '';
-    const normUsername = typeof username === 'string' ? username.trim().toLowerCase() : '';
+    const normEmail = String(email || '').trim();
+    const normPassword = String(password || '');
+    const normFullName = String(fullName || '').trim();
+    const normUsername = String(username || '').trim().toLowerCase();
 
     if (!normEmail || !normPassword || !normUsername) {
        throw new Error('Email, password, and username are required.');

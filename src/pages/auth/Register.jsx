@@ -109,7 +109,7 @@ export default function Register() {
                   type="text"
                   required
                   value={username}
-                  onChange={(e) => setUsername((e.target.value || '').toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  onChange={(e) => setUsername(String(e.target.value || '').toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                   className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-app-text)] rounded-xl pl-16 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 focus:border-[var(--color-primary)] transition-all"
                   placeholder="username"
                 />
