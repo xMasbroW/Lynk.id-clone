@@ -33,6 +33,21 @@ export const captureException = (error, context = {}) => {
   }
 };
 
+/**
+ * Capture execution metrics specific to automation/jobs
+ */
+export const captureExecutionMetric = (metricName, value, tags = {}) => {
+  if (env.isProd && env.sentryDsn) {
+    // Note: In a full setup, this might use Sentry Metrics API if enabled,
+    // or send to Datadog/Prometheus.
+    // We log it as a structured message for basic observability
+    Sentry.withScope((scope) => {
+      Object.keys(tags).forEach(key => scope.setTag(key, tags[key]));
+      Sentry.captureMessage(`Metric: ${metricName} = ${value}`, 'info');
+    });
+  }
+};
+
 export const captureMessage = (message, context = {}) => {
   if (env.isProd && env.sentryDsn) {
     Sentry.withScope((scope) => {

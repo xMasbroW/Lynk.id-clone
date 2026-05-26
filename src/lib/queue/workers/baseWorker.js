@@ -40,8 +40,13 @@ class WorkerClass {
       }
     } catch (err) {
       logger.error(`Worker poll error on queue ${this.queueName}`, err);
+      // Graceful degradation: backoff polling slightly if the DB is failing to respond
+      setTimeout(() => this.poll(), this.pollInterval * 2);
+      return;
     } finally {
-      setTimeout(() => this.poll(), this.pollInterval);
+      if (this.isRunning) {
+         setTimeout(() => this.poll(), this.pollInterval);
+      }
     }
   }
 

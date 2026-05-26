@@ -436,3 +436,51 @@ BEGIN
   RETURNING *;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ==========================================
+-- PHASE 13: PRE-LAUNCH SECURITY HARDENING
+-- ==========================================
+
+-- Strictly secure API Keys viewability (Already mostly covered, reinforcing)
+CREATE POLICY "Strict isolation for API Keys"
+    ON api_keys FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM workspaces
+            WHERE workspaces.id = api_keys.workspace_id
+            AND workspaces.owner_id = auth.uid()
+        )
+    );
+
+-- Isolate jobs to internal roles (Service Role) - Public users shouldn't query jobs
+CREATE POLICY "Deny all public access to jobs"
+    ON jobs FOR ALL
+    USING (false);
+
+-- Isolate execution logs
+CREATE POLICY "Users can only view their own execution logs"
+    ON ai_execution_logs FOR SELECT
+    USING (auth.uid() = user_id);
+
+-- Enforce strict constraints on links (e.g. limit length to prevent abuse)
+-- Example altering constraint if it existed, but keeping it simple:
+ALTER TABLE links ADD CONSTRAINT links_url_length_check CHECK (char_length(url) <= 2048);
+
+
+-- ==========================================
+-- PHASE 13: DATABASE & STORAGE HARDENING
+-- ==========================================
+
+-- Ensure efficient polling for workers by adding covering index for fetch_pending_jobs
+CREATE INDEX IF NOT EXISTS idx_jobs_fetch
+ON jobs (queue_name, status, run_at)
+INCLUDE (id, payload, retries, max_retries, deduplication_id);
+
+-- Ensure analytics events don't degrade query performance
+CREATE INDEX IF NOT EXISTS idx_analytics_events_date_user
+ON analytics_events (user_id, created_at DESC);
+
+-- Ensure workflow state queries are fast
+CREATE INDEX IF NOT EXISTS idx_automation_runs_status
+ON automation_runs (workflow_id, status);

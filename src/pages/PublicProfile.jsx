@@ -108,8 +108,11 @@ export default function PublicProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--color-app-bg)] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[var(--color-app-border)] border-t-[var(--color-app-text)] rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[var(--color-app-bg)] flex items-center justify-center p-4" aria-live="polite" aria-busy="true">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <div className="w-10 h-10 border-2 border-[var(--color-app-border)] border-t-[var(--color-app-text)] rounded-full animate-spin"></div>
+          <p className="text-[var(--color-app-text-muted)] font-medium tracking-wide">Loading Profile...</p>
+        </div>
       </div>
     );
   }
@@ -117,11 +120,12 @@ export default function PublicProfile() {
   if (error || !profileData.profile) {
     return (
       <div className="min-h-screen bg-[var(--color-app-bg)] flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 bg-[var(--color-app-surface)] text-[var(--color-app-text-muted)] rounded-full flex items-center justify-center mb-6">
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <div className="w-20 h-20 bg-[var(--color-app-surface)] text-[var(--color-app-text-muted)] rounded-full flex items-center justify-center mb-6 shadow-sm">
+          <svg className="w-10 h-10 text-red-500/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
-        <h1 className="text-2xl font-bold text-[var(--color-app-text)] mb-2">Profile Not Found</h1>
-        <p className="text-[var(--color-app-text-muted)] text-center">The page you're looking for doesn't exist or has been removed.</p>
+        <h1 className="text-3xl font-bold text-[var(--color-app-text)] mb-3 tracking-tight">Profile Not Found</h1>
+        <p className="text-[var(--color-app-text-muted)] text-center max-w-sm leading-relaxed">The page you're looking for doesn't exist, has been removed, or the username is incorrect.</p>
+        <a href="/" className="mt-8 px-6 py-2.5 bg-[var(--color-app-text)] text-[var(--color-app-bg)] rounded-full font-semibold hover:opacity-90 transition-opacity">Return Home</a>
       </div>
     );
   }
